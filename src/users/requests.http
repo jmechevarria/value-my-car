@@ -1,29 +1,48 @@
-### List all users
-GET http://localhost:3000/users
+### Who am I
 
+GET http://localhost:3000/users/whoami
 
-### Signup user
+### Sign up
+
 POST http://localhost:3000/users/auth/signup
 Content-Type: application/json
 
 {
-    "email": "new2@test.com",
-    "password": "newnew"
+    "email": "last@test.com",
+    "password": "333S"
 }
 
-### Get a user by ID
-GET http://localhost:3000/users/4
+### Sign in
 
-### Get a user by email
-GET http://localhost:3000/users?email=email@test.com
-
-### Delete a user by id
-DELETE  http://localhost:3000/users/2
-
-### Update a user by id
-PATCH   http://localhost:3000/users/4
+POST http://localhost:3000/users/auth/signin
 Content-Type: application/json
 
 {
-    "email": "ddd@email.com"
+    "email": "last@test.com",
+    "password": "333S"
+}
+
+### Sign out
+
+POST http://localhost:3000/users/auth/signout
+
+### List all users
+
+GET http://localhost:3000/users
+
+### Get a user by ID
+GET http://localhost:3000/users/3
+
+### Get a user by email
+GET http://localhost:3000/users?email=eee@email.com
+
+### Delete a user by id
+DELETE  http://localhost:3000/users/52
+
+### Update a user by id
+PATCH   http://localhost:3000/users/42
+Content-Type: application/json
+
+{
+    "email": "eee@email.com"
 }

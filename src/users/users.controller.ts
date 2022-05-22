@@ -7,15 +7,20 @@ import {
   Patch,
   Post,
   Query,
+  Session,
+  UseGuards,
 } from '@nestjs/common';
-import { UsersService } from './users.service';
+import { AuthGuard } from 'src/guards/auth.guard';
+import { Serialize } from 'src/interceptors/serialize.interceptor';
+import { AuthService } from './auth.service';
+import { CurrentUser } from './decorators/current-user.decorator';
 import { CreateUserDTO } from './dtos/create.user.dto';
 import { UpdateUserDTO } from './dtos/update.user.dto';
-import { Serialize } from 'src/interceptors/serialize.interceptor';
 import { UserDTO } from './dtos/user.dto';
-import { AuthService } from './auth.service';
+import { User } from './user.entity';
+import { UsersService } from './users.service';
 
-@Serialize(UserDTO) // format outgoing responses, by serializing it using the rules we put in the DT
+@Serialize(UserDTO) // format outgoing responses, by serializing it using the rules we put in the DTO
 @Controller('users')
 export class UsersController {
   constructor(
@@ -23,20 +28,48 @@ export class UsersController {
     private authService: AuthService,
   ) {}
 
+  @Get('/whoami')
+  @UseGuards(AuthGuard)
+  whoAmI(@CurrentUser() currentUser: User) {
+    return currentUser;
+  }
+
+  @Post('auth/signout')
+  async signOut(@Session() session: any) {
+    delete session.userId;
+  }
+
   @Post('auth/signup')
-  signup(@Body() body: CreateUserDTO) {
-    return this.authService.signup(body.email, body.password);
+  async signup(@Body() body: CreateUserDTO, @Session() session: any) {
+    const user = await this.authService.signup(body.email, body.password);
+    session.userId = user.id;
+
+    return user;
+  }
+
+  @Post('auth/signin')
+  async signin(@Body() body: CreateUserDTO, @Session() session: any) {
+    const user = await this.authService.signin(body.email, body.password);
+    session.userId = user.id;
+
+    return user;
   }
 
   @Get()
-  findByEmail(@Query('email') email: string) {
-    return this.usersService.find(email);
+  async find(@Query() query: Partial<UserDTO>) {
+    const email = query.email;
+    if (email) {
+      const user = await this.usersService.find({ email });
+      return user;
+    } else {
+      const user = await this.usersService.findAll();
+      return user;
+    }
   }
 
   @Get(':id')
   async findByID(@Param('id') id: string) {
-    const user = await this.usersService.findOne(parseInt(id));
-    return user;
+    return await this.usersService.find({ id: parseInt(id) });
   }
 
   @Patch(':id')

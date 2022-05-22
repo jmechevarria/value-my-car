@@ -14,8 +14,9 @@ export class AuthService {
   constructor(private usersService: UsersService) {}
 
   async signup(email: string, password: string) {
-    const users = await this.usersService.find(email);
-    if (users?.length) throw new BadRequestException('Email in use');
+    const user = await this.usersService.find({ email });
+
+    if (user) throw new BadRequestException('Email in use');
 
     const salt = randomBytes(8).toString('hex');
 
@@ -27,15 +28,15 @@ export class AuthService {
   }
 
   async signin(email: string, password: string) {
-    const users = await this.usersService.find(email);
-    if (!users?.length) throw new NotFoundException('Email in use');
+    const user = await this.usersService.find({ email });
 
-    const salt = randomBytes(8).toString('hex');
+    if (!user) throw new NotFoundException('User not found');
 
+    const [salt, hashedPassword] = user.password.split('.');
     const hash = (await scrypt(password, salt, 32)) as Buffer;
 
-    const saltedHash = `${salt}.${hash.toString('hex')}`;
+    if (hashedPassword === hash.toString('hex')) return user;
 
-    return this.usersService.find(email, saltedHash);
+    throw new NotFoundException('User not found');
   }
 }
